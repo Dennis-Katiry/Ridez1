@@ -1,21 +1,26 @@
 /* eslint-disable react/prop-types */
-import React, { useState } from 'react';
-import { userDataContext } from './userDataContext';
+import React, { createContext, useState } from 'react'
+
+export const UserDataContext = createContext()
+
 
 const UserContext = ({ children }) => {
-  const [user, setuser] = useState({
-    email: '',
-    fullName: {
-      firstName: '',
-      lastName: '',
-    },
-  });
 
-  return (
-    <userDataContext.Provider value={[user, setuser]}>
-      {children}
-    </userDataContext.Provider>
-  );
-};
+    const [ user, setUser ] = useState({
+        email: '',
+        fullName: {
+            firstName: '',
+            lastName: ''
+        }
+    })
 
-export default UserContext;
+    return (
+        <div>
+            <UserDataContext.Provider value={{ user, setUser }}>
+                {children}
+            </UserDataContext.Provider>
+        </div>
+    )
+}
+
+export default UserContext
