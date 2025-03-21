@@ -1,88 +1,109 @@
-import React, { useState, useContext } from 'react'
-import { Link } from 'react-router-dom'
-import { UserDataContext } from '../context/UserContext'
-import { useNavigate } from 'react-router-dom'
-import axios from 'axios'
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 const UserLogin = () => {
-  const [ email, setEmail ] = useState('')
-  const [ password, setPassword ] = useState('')
-  const [ userData, setUserData ] = useState({})
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState(null);
+  const [showPassword, setShowPassword] = useState(false);
 
-  const { user, setUser } = useContext(UserDataContext)
-  const navigate = useNavigate()
-
-
+  const navigate = useNavigate();
 
   const submitHandler = async (e) => {
     e.preventDefault();
+    setError(null);
 
-    const userData = {
-      email: email,
-      password: password
+    const userData = { email, password };
+
+    try {
+      const response = await axios.post(`${import.meta.env.VITE_BASE_URL}/users/login`, userData);
+      if (response.status === 200) {
+        const data = response.data;
+        localStorage.setItem('userToken', data.token);
+        localStorage.removeItem('captainToken'); // Clear captain token
+        navigate('/home'); // Redirect to home, where UserContext will fetch user
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || 'Login failed. Please try again.');
     }
 
-    const response = await axios.post(`${import.meta.env.VITE_BASE_URL}/users/login`, userData)
-
-    if (response.status === 200) {
-      const data = response.data
-      setUser(data.user)
-      localStorage.setItem('token', data.token)
-      navigate('/home')
-    }
-
-
-    setEmail('')
-    setPassword('')
-  }
+    setEmail('');
+    setPassword('');
+  };
 
   return (
-    <div className='p-7 h-screen flex flex-col justify-between'>
-      <div>
-        <img className='w-16 mb-10' src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQYQy-OIkA6In0fTvVwZADPmFFibjmszu2A0g&s" alt="" />
-
-        <form onSubmit={(e) => {
-          submitHandler(e)
-        }}>
-          <h3 className='text-lg font-medium mb-2'>What&apos;s your email</h3>
-          <input
-            required
-            value={email}
-            onChange={(e) => {
-              setEmail(e.target.value)
-            }}
-            className='bg-[#eeeeee] mb-7 rounded-lg px-4 py-2 border w-full text-lg placeholder:text-base'
-            type="email"
-            placeholder='email@example.com'
-          />
-
-          <h3 className='text-lg font-medium mb-2'>Enter Password</h3>
-
-          <input
-            className='bg-[#eeeeee] mb-7 rounded-lg px-4 py-2 border w-full text-lg placeholder:text-base'
-            value={password}
-            onChange={(e) => {
-              setPassword(e.target.value)
-            }}
-            required type="password"
-            placeholder='password'
-          />
-
+    <div className="flex flex-col items-center justify-center min-h-screen px-6 py-8 font-sans bg-gray-50">
+      <Link to="/start" className="mb-10">
+        <img className="w-auto h-14" src="/images/ridezlogo.png" alt="Ridez Logo" />
+      </Link>
+      <div className="w-full max-w-md p-8 bg-white shadow-xl rounded-2xl">
+        <h2 className="mb-8 text-3xl font-extrabold text-center text-gray-900">Welcome Back</h2>
+        <form onSubmit={submitHandler} className="space-y-6">
+          <div>
+            <label className="block mb-2 text-sm font-medium text-gray-700">Email</label>
+            <div className="relative">
+              <i className="absolute text-xl text-gray-400 transform -translate-y-1/2 left-3 top-1/2 ri-mail-line"></i>
+              <input
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full py-3 pl-12 pr-4 text-gray-800 placeholder-gray-400 transition duration-200 bg-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                type="email"
+                placeholder="email@example.com"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="block mb-2 text-sm font-medium text-gray-700">Password</label>
+            <div className="relative">
+              <i className="absolute text-xl text-gray-400 transform -translate-y-1/2 left-3 top-1/2 ri-lock-line"></i>
+              <input
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full py-3 pl-12 pr-12 text-gray-800 placeholder-gray-400 transition duration-200 bg-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                type={showPassword ? 'text' : 'password'}
+                placeholder="••••••••"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute text-gray-500 transition transform -translate-y-1/2 right-3 top-1/2 hover:text-gray-700"
+              >
+                <i className={`text-xl ${showPassword ? 'ri-eye-off-line' : 'ri-eye-line'}`}></i>
+              </button>
+            </div>
+          </div>
+          {error && (
+            <p className="py-2 text-sm text-center text-red-600 bg-red-100 rounded-lg">{error}</p>
+          )}
           <button
-            className='bg-[#111] text-white font-semibold mb-3 rounded-lg px-4 py-2 w-full text-lg placeholder:text-base'
-          >Login</button>
-
+            type="submit"
+            className="w-full py-3 font-semibold text-white transition duration-200 bg-blue-600 rounded-lg shadow-md hover:bg-blue-700 hover:scale-105 focus:ring-4 focus:ring-blue-300"
+          >
+            Log In
+          </button>
         </form>
-        <p className='text-center'>New here? <Link to='/signup' className='text-blue-600'>Create new Account</Link></p>
+        <p className="mt-4 text-sm text-center text-gray-600">
+          <Link to="/request-password-reset" className="text-blue-600 hover:underline">Forgot Password?</Link>
+        </p>
+        <p className="mt-2 text-sm text-center text-gray-600">
+          New here? <Link to="/signup" className="font-medium text-blue-600 hover:underline">Create an Account</Link>
+        </p>
       </div>
-      <div>
+      <div className="w-full max-w-md mt-6">
         <Link
-          to='/captain-login'
-          className='bg-[#10b461] flex items-center justify-center text-white font-semibold mb-5 rounded-lg px-4 py-2 w-full text-lg placeholder:text-base'
-        >Sign in as Captain</Link>
+          to="/captain-login"
+          className="flex items-center justify-center w-full py-3 font-semibold text-white transition duration-200 bg-green-600 rounded-lg shadow-md hover:bg-green-700 hover:scale-105 focus:ring-4 focus:ring-green-300"
+        >
+          Sign in as Captain
+          <i className="ml-2 text-xl ri-arrow-right-line"></i>
+        </Link>
       </div>
+      <Link to="/" className="mt-6 text-sm text-gray-500 transition hover:text-gray-700">Back to Home</Link>
     </div>
-  )
-}
+  );
+};
 
-export default UserLogin
+export default UserLogin;
